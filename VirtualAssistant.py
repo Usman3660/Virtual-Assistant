@@ -1,16 +1,17 @@
-# pip install pyaudio
 
-import pyttsx3 #pip install pyttsx3
-import speech_recognition as sr #pip install speechRecognition
+import pyttsx3 
+import speech_recognition as sr 
 import datetime
-import wikipedia #pip install wikipedia
+import wikipedia 
 import webbrowser
 import os
 import smtplib
+import requests
+import pyjokes
+import geocoder
 
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-# print(voices[1].id)
 engine.setProperty('voice', voices[0].id)
 
 
@@ -60,6 +61,46 @@ def sendEmail(to, content):
     server.sendmail('youremail@gmail.com', to, content)
     server.close()
 
+def get_current_location():
+    # Get the current location based on IP address
+    g = geocoder.ip('me')
+    if g.ok:
+        return g.latlng  # Returns a list [latitude, longitude]
+    else:
+        return None
+
+def get_weather():
+    api_key = "your_openweathermap_api_key"
+    location = get_current_location()
+    
+    if location is None:
+        speak("Sorry, I couldn't determine your location.")
+        return
+
+    lat, lon = location
+    url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}"
+    
+    try:
+        response = requests.get(url).json()
+        print("API Response:", response)
+
+        if response.get("cod") != 200:
+            speak(f"Error: {response.get('message', 'Unable to retrieve weather data.')}")
+            return
+
+        weather = response['weather'][0]['description']
+        temperature = round(response['main']['temp'] - 273.15, 2)
+        speak(f"The weather at your current location is {weather} with a temperature of {temperature} degrees Celsius.")
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        speak("Sorry, I couldn't retrieve the weather information.")
+
+def tell_joke():
+    joke = pyjokes.get_joke()
+    speak(joke)
+
+
 if __name__ == "__main__":
     wishMe()
     while True:
@@ -72,10 +113,16 @@ if __name__ == "__main__":
             speak("According to Wikipedia")
             print(results)
             speak(results)
-
+        
+        elif 'tell a joke' in query:
+            joke = pyjokes.get_joke()
+            speak(joke)
         elif 'open youtube' in query:
             webbrowser.open("youtube.com")
-
+        elif 'get weather' in query:
+             speak("Please tell me the name of city ")
+             city = takeCommand()
+             get_weather(city)
         elif 'open google' in query:
             webbrowser.open("google.com")
 
@@ -84,10 +131,10 @@ if __name__ == "__main__":
 
 
         elif 'play music' in query:
-            music_dir = 'Downloads\\Confidential.Assignment.2.2022.720p.10bit.WEB-DL.HIN-KOR.x265-KatmovieHD.mov.mkv'
+            music_dir = 'D:\season'
             songs = os.listdir(music_dir)
             print(songs)    
-            os.startfile(os.path.join(music_dir, songs[0]))
+            os.startfile(os.path.join(music_dir,songs[0]))
 
         elif 'the time' in query:
             strTime = datetime.datetime.now().strftime("%H:%M:%S")    
@@ -101,7 +148,7 @@ if __name__ == "__main__":
             try:
                 speak("What should I say?")
                 content = takeCommand()
-                to = "muhammadusmanan121@gmail.com"    
+                to = "muhammadusmananwar50@gmail.com"    
                 sendEmail(to, content)
                 speak("Email has been sent!")
             except Exception as e:
