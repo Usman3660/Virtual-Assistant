@@ -12,15 +12,6 @@ import string
 
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-
-# Select a female voice if available
-for voice in voices:
-    if "female" in voice.name.lower():
-        engine.setProperty('voice', voice.id)
-        break
-else:
-    print("Female voice not found, using default voice.")
-
 def speak(audio):
     engine.say(audio)
     engine.runAndWait()
@@ -37,7 +28,6 @@ def wishMe():
     speak("I am Jarvis Sir. Please tell me how may I help you")       
 
 def takeCommand():
-    # It takes microphone input from the user and returns string output
     r = sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
@@ -103,10 +93,26 @@ def tell_joke():
     joke = pyjokes.get_joke()
     speak(joke)
 
+def search_and_open(file_name):
+    matches = []
+
+    drives = [f"{drive}:\\" for drive in string.ascii_uppercase if os.path.exists(f"{drive}:\\")]
+
+    for drive in drives:
+        for root, dirs, files in os.walk(drive):
+            for file in files:
+                if file_name.lower() in file.lower() and file.endswith(('.pdf', '.txt', '.docx')):
+                    matches.append(os.path.join(root, file))
+
+    if matches:
+        speak(f"Found {len(matches)} match(es). Opening the first one.")
+        os.startfile(matches[0])
+    else:
+        speak("File not found.")
+
 def search_and_play(movie_name):
     matches = []
 
-    # Get all available drives
     drives = [f"{drive}:\\" for drive in string.ascii_uppercase if os.path.exists(f"{drive}:\\")]
 
     for drive in drives:
@@ -139,16 +145,16 @@ if __name__ == "__main__":
 
         elif 'open youtube' in query:
             webbrowser.open("youtube.com")
-
+        
         elif 'get weather' in query:
             speak("Do you want the weather for your current location or a specific city?")
             choice = takeCommand().lower()
             if "current" in choice:
-                get_weather()  # Use geolocation
+                get_weather()  
             else:
                 speak("Please tell me the name of the city.")
                 city = takeCommand()
-                if city != "None":  # Ensure valid input
+                if city != "None": 
                  get_weather(city_name=city)
                 else:
                     speak("I couldn't understand the city name. Please try again.")
@@ -169,6 +175,17 @@ if __name__ == "__main__":
             speak("Which movie do you want to play?")
             movie_name = takeCommand()
             search_and_play(movie_name)
+        
+        elif 'open file' in query or ('open' in query and 'file' in query):
+            speak("Which file do you want to open?")
+            file_name = takeCommand()
+    
+            if file_name == "None" or not file_name.strip():
+                speak("I couldn't understand the file name. Please try again.")
+                continue
+            print(f"Searching for file: {file_name}")
+            search_and_open(file_name)
+
 
         elif 'the time' in query:
             strTime = datetime.datetime.now().strftime("%H:%M:%S")    
